@@ -24,11 +24,11 @@ public class Socks5 {
                     String inputLine, outputLine;
 
                     int c = in.read();
-                    System.out.println(c + " " + String.format("%x", c));
+//                    System.out.println(c + " " + String.format("%x", c));
                     c = in.read();
-                    System.out.println(c);
+//                    System.out.println(c);
                     c = in.read();
-                    System.out.println(c);
+//                    System.out.println(c);
 
                     out.write("\u0005\u0000".getBytes());
                     out.flush();
@@ -36,25 +36,46 @@ public class Socks5 {
                     in.read();
                     in.read();
                     in.read();
-                    in.read();
-                    c = in.read(); // len
-                    System.out.println(c);
+
                     StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < c; i++) {
-                        int ch = in.read();
-                        System.out.println(ch);
-                        sb.append((char) ch);
+                    String host = "";
+                    int atyp = in.read();
+                    switch (atyp) {
+                        case 0x01: // IPv4
+                            for (int i = 0; i < 4; i++) {
+                                int ch = in.read();
+                                sb.append("." + ch);
+                            }
+                            host = sb.toString().substring(1);
+                            break;
+                        case 0x03: // domain name
+                            c = in.read(); // len
+//                            System.out.println(c);
+                            for (int i = 0; i < c; i++) {
+                                int ch = in.read();
+//                                System.out.println(ch);
+                                sb.append((char) ch);
+                            }
+                            host = sb.toString();
+                            break;
+                        default:
+                            System.err.println("Unsupported atyp: " + atyp);
+                            break;
                     }
-                    String host = sb.toString();
+
                     int port = 0;
                     c = in.read();
-                    System.out.println("ph: " + c);
+//                    System.out.println("ph: " + c);
                     port += (c << 8);
-                    System.out.println("ph: " + port);
+//                    System.out.println("ph: " + port);
                     c = in.read();
-                    System.out.println("pl: " + c + String.format("%x", c));
+//                    System.out.println("pl: " + c + String.format(" %x", c));
                     port += c;
-                    System.out.println("p: " + port);
+//                    System.out.println("p: " + port);
+//                    if (port < 0) {
+//                        System.err.println("port error");
+//                        System.exit(-1);
+//                    }
 
                     out.write("\u0005\u0000\u0000\u0001".getBytes());
                     for (int i = 0; i < 6; i++) {
@@ -62,8 +83,7 @@ public class Socks5 {
                     }
                     out.flush();
 
-                    System.out.println("Host: " + host);
-                    System.out.println("Port: " + port);
+                    System.out.println(String.format("Connect to %s:%d", host, port));
                     Socket toRemote = new Socket(host, port);
 
                     InputStream fromLocalInput = clientSocket.getInputStream();
@@ -121,14 +141,10 @@ public class Socks5 {
             }
         }
 
-
-
         try {
-            new NetworkService(8888, 5).run();
+            new NetworkService(28888, 1).run();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 }
