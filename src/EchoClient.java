@@ -10,7 +10,7 @@ public class EchoClient {
         try {
             Socket s = new Socket("127.0.0.1", 9999);
 
-            BufferedInputStream in = new BufferedInputStream(s.getInputStream());
+            final BufferedInputStream in = new BufferedInputStream(s.getInputStream());
             BufferedOutputStream out = new BufferedOutputStream(s.getOutputStream());
 
             class ReadThread extends Thread {
