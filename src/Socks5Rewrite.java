@@ -22,8 +22,14 @@ class Handler implements Runnable {
             String inputLine, outputLine;
 
             int c = in.read();
-            c = in.read();
-            c = in.read();
+            if (c != 0x05) {
+                closeFromClientSocket();
+                return;
+            }
+            int methodLength = in.read();
+            for (int i = 0; i < methodLength; i++) {
+                c = in.read(); // discard
+            }
             out.write("\u0005\u0000".getBytes());
             out.flush();
 
@@ -86,24 +92,33 @@ class Handler implements Runnable {
             if (connectToServer(host, port)) {
                 relay();
             } else {
-                fromClient.close();
+                closeFromClientSocket();
             }
         } catch (SocketException e) {
             e.printStackTrace();
-            try {
-                System.err.println("Socket closing..."  + e.getMessage());
-                fromClient.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            closeFromClientSocket();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private void closeFromClientSocket() {
+        try {
+            System.err.println("Socket closing...");
+            fromClient.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     private boolean connectToServer(String host, int port) {
         try {
-            toServer = new Socket(host, port);
+//            toServer = new Socket(host, port);
+            toServer = new Socket(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("128.199.111.96", 51888)));
+
+            InetSocketAddress dest = InetSocketAddress.createUnresolved(host, port);
+
+            toServer.connect(dest);
 //            toServer.setSoTimeout(5000);
             return true;
         } catch (ConnectException ex) {
@@ -120,6 +135,16 @@ class Handler implements Runnable {
         return false;
     }
 
+
+    private void encode(byte[] buf, int size) {
+        for (int i = 0; i < size; i++) {
+            buf[i] = (byte) (buf[i] ^ (byte)('S'));
+        }
+    }
+
+    private void decode(byte[] buf, int size) {
+        encode(buf, size);
+    }
 
     class SocketReader extends Thread {
         public SocketReader() {
@@ -138,6 +163,7 @@ class Handler implements Runnable {
 
                 while ((n = in.read(buf)) != -1) {
 //                            System.out.println("C --> R  n: " + n);
+                    encode(buf, n);
                     out.write(buf, 0, n);
                     out.flush();
                 }
@@ -145,7 +171,8 @@ class Handler implements Runnable {
                 System.err.println("C --> R Socket timeout..."  + ex.getMessage());
             } catch (SocketException ex) {
                 if (ex.getMessage().contains("Socket closed")){
-                    System.err.println("    XXXX R XXX S ..."  + ex.getMessage() + " // "+ toServer.getInetAddress().toString() + ":" + toServer.getPort());
+                    System.err.println("    XXXX R XXX S ..."  + ex.getMessage() + " // ");
+//                    System.err.println("    XXXX R XXX S ..."  + ex.getMessage() + " // "+ toServer.getInetAddress().toString() + ":" + toServer.getPort());
                 } else if (ex.getMessage().contains("reset")) {
                     ex.printStackTrace();
                     System.err.println("C --> R       RST..."  + ex.getMessage() + " // "+ toServer.getInetAddress().toString() + ":" + toServer.getPort());
@@ -191,6 +218,7 @@ class Handler implements Runnable {
                 byte buf[] = new byte[BUFSIZE];
                 while ((n = in.read(buf)) != -1) {
 //                            System.out.println("      R <-- S  n: " + n);
+                    decode(buf, n);
                     out.write(buf, 0, n);
                     out.flush();
                 }
@@ -198,7 +226,8 @@ class Handler implements Runnable {
                 System.err.println("         R <-- S Socket timeout..."  + ex.getMessage());
             } catch (SocketException ex) {
                 if (ex.getMessage().contains("Socket closed")){
-                    System.err.println("    XXXX R XXX S ..."  + ex.getMessage() + " // "+ toServer.getInetAddress().toString() + ":" + toServer.getPort());
+                    System.err.println("    XXXX R XXX S ..."  + ex.getMessage() + " // ");
+//                    System.err.println("    XXXX R XXX S ..."  + ex.getMessage() + " // "+ toServer.getInetAddress().toString() + ":" + toServer.getPort());
                 } else if (ex.getMessage().contains("reset")) {
                     System.err.println("         R <-- S RST..."  + ex.getMessage() + " // "+ toServer.getInetAddress().toString() + ":" + toServer.getPort());
                 } else if (ex.getMessage().contains("Software caused connection abort: socket write error")){
