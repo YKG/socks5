@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -10,10 +12,18 @@ public class RTTServer {
             Handler(Socket socket) { this.socket = socket; }
             public void run() {
                 try {
+                    socket.setKeepAlive(true);
                     String addr = socket.getInetAddress().toString();
-                    socket.close();
+                    OutputStream out = socket.getOutputStream();
+                    InputStream in = socket.getInputStream();
+                    byte[] buf = new byte[4096];
+                    while (in.read(buf) != -1) {
+                        out.write("HTTP/1.1 200 OK\nContent-Length: 3\n\r\nHi\n".getBytes());
+                        out.flush();
+                        System.out.println(System.nanoTime() + " " + addr);
+                    }
+//                    socket.close();
 
-                    System.out.println(System.nanoTime() + " " + addr);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -44,7 +54,7 @@ public class RTTServer {
 
 
         try {
-            int port = 20199;
+            int port = 20180;
             System.out.println("Listen: " + port);
             new NetworkService(port, 10).run();
         } catch (IOException e) {

@@ -6,15 +6,23 @@ import java.net.SocketAddress;
 public class RTT {
 
     public static void main(String[] args) {
-//        String host = "52.191.134.183";
-        String host = "127.0.0.1";
-//        host = "kaige.org";
+        String host = "52.191.134.183";
+//        String host = "127.0.0.1";
+        host = "kaige.org";
+        host = "lax-ca-us-ping.vultr.com";
+        host = "ffm.lg.virmach.com";
+        host = "sgp-ping.vultr.com";
+        host = "fra-de-ping.vultr.com";
+
+        host = "us1";
+//        host = "la.lg.virmach.com";
 //        host = "139.199.20.173";
 //        host = "52.191.134.183";
-        host = "sgp2";
-        int port = 22;
+//            host = "";
+//        int port = 51888;
+        int port = 20177;
 
-        int count = 5;
+        int count = 15;
         printRTT(host, port, count);
     }
 

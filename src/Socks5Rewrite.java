@@ -4,6 +4,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 class Handler implements Runnable {
+    private static final String server = "kaige.org";
+    private static final int serverPort = 51888;
+
     private final Socket fromClient;
     private Socket toServer;
     private ExecutorService pool;
@@ -114,7 +117,7 @@ class Handler implements Runnable {
     private boolean connectToServer(String host, int port) {
         try {
 //            toServer = new Socket(host, port);
-            toServer = new Socket(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("128.199.111.96", 51888)));
+            toServer = new Socket(new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(server, serverPort)));
 
             InetSocketAddress dest = InetSocketAddress.createUnresolved(host, port);
 
@@ -138,7 +141,7 @@ class Handler implements Runnable {
 
     private void encode(byte[] buf, int size) {
         for (int i = 0; i < size; i++) {
-            buf[i] = (byte) (buf[i] ^ (byte)('S'));
+            buf[i] = (byte) (buf[i] ^ (byte)(0xa5));
         }
     }
 
@@ -286,7 +289,7 @@ public class Socks5Rewrite {
 
         try {
             int port = 51888;
-            int poolSize = 32;
+            int poolSize = 100;
             System.out.println("Listen: " + port + " PoolSize: " + poolSize);
             new NetworkService(port, poolSize).run();
         } catch (IOException e) {
